@@ -50,7 +50,19 @@
        
       *We define a TABLE that will hold world information and dialogue.
        01 WORLD-TABLE.
-           02 DIALOGUE             PIC X(500) OCCURS 10 TIMES.
+           02 DIALOGUE             PIC X(500) OCCURS 100 TIMES.
+
+       01 WS-STRING-POINTER        PIC 9(2) VALUE 1.
+       
+       01 AVAILABLE-ACTIONS.
+           02 ACTION               PIC X(500) OCCURS 16 TIMES.
+       01 CURRENT-ACTION-COUNTER   PIC 9(2) VALUE 1.
+       01 CURRENT-ACTION-COLUMN    PIC 9(2) VALUE 1.
+       01 ACTION-VALID-FLAG        PIC X(1) VALUE 'N'.
+           88 ACTION-VALID                  VALUE 'Y'
+                                   WHEN SET TO FALSE IS 'N'.
+
+       01 CURRENT-DIALOGUE-INDEX   PIC 9(2) VALUE 1.
 
        01 PLAYER-DATA.
            02 PLAYER-HEALTH        PIC ZZ9.
@@ -72,7 +84,7 @@
                        SET EOF-DIALOGUE-REACHED TO TRUE
                    NOT AT END
                        MOVE DIALOGUE-RECORD TO 
-                           DIALOGUE(WS-DIALOGUE-RECORD-COUNT)
+                           DIALOGUE(WS-DIALOGUE-RECORD-COUNT + 1)
                        ADD 1 TO WS-DIALOGUE-RECORD-COUNT
                END-READ
            END-PERFORM.
@@ -100,9 +112,10 @@
                ACCEPT USER-INPUT
 
                SET INPUT-VALID TO TRUE
-               IF USER-INPUT = "1"
+      *        We check only the first character in the user input.
+               IF USER-INPUT(1:1) = "1"
                    PERFORM LOAD-GAME-ROUTINE
-               ELSE IF USER-INPUT = "2"
+               ELSE IF USER-INPUT(1:1) = "2"                            
                    PERFORM NEW-GAME-ROUTINE
                ELSE
                    SET INPUT-VALID TO FALSE
@@ -141,7 +154,83 @@
            DISPLAY "CREATING NEW GAME".
 
        EXPLORING-ROUTINE.
-           DISPLAY "You wake up in a dimly lit room. You can see an "
-                   "old wooden door. What do you want to do?".
+           DISPLAY FUNCTION TRIM(DIALOGUE(CURRENT-DIALOGUE-INDEX)).
 
-           ACCEPT USER-INPUT.
+      *    We RESET all available actions and save the next available
+      *    actions.    
+           PERFORM RESET-AVAILABLE-ACTIONS.
+           PERFORM INIT-AVAILABLE-ACTIONS.
+
+           IF FUNCTION TRIM(ACTION(1)) NOT EQUAL "NONE"
+               DISPLAY "------------------"
+               DISPLAY "Available actions:"
+
+               PERFORM DISPLAY-AVAILABLE-ACTIONS
+
+               DISPLAY "Input: " WITH NO ADVANCING
+
+               ACCEPT USER-INPUT
+
+               DISPLAY " "
+
+               PERFORM CHECK-ACTION-VALIDITY
+           ELSE
+               DISPLAY " "
+               SET CURRENT-DIALOGUE-INDEX TO ACTION(2).
+       
+       RESET-AVAILABLE-ACTIONS.
+           PERFORM UNTIL CURRENT-ACTION-COUNTER > 16
+               MOVE " " TO ACTION(CURRENT-ACTION-COUNTER)
+               ADD 1 TO CURRENT-ACTION-COUNTER
+           END-PERFORM.
+
+           MOVE 1 TO CURRENT-ACTION-COUNTER.
+       
+       INIT-AVAILABLE-ACTIONS.
+           PERFORM UNTIL CURRENT-ACTION-COUNTER > 16
+               UNSTRING DIALOGUE(CURRENT-DIALOGUE-INDEX + 1)
+                   DELIMITED BY ";"
+                   INTO ACTION(CURRENT-ACTION-COUNTER)
+                   WITH POINTER WS-STRING-POINTER
+               END-UNSTRING
+
+               IF ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL SPACES
+                   ADD 1 TO CURRENT-ACTION-COUNTER
+               ELSE
+                   EXIT PERFORM
+               END-IF
+           END-PERFORM.
+
+           MOVE 1 TO CURRENT-ACTION-COUNTER.
+       
+       DISPLAY-AVAILABLE-ACTIONS.
+           PERFORM UNTIL CURRENT-ACTION-COUNTER > 16
+               IF ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL SPACES
+                   DISPLAY FUNCTION TRIM(ACTION(CURRENT-ACTION-COUNTER))
+                   ADD 2 TO CURRENT-ACTION-COUNTER
+               ELSE
+                   DISPLAY " "
+                   EXIT PERFORM
+               END-IF
+           END-PERFORM.
+
+           MOVE 1 TO CURRENT-ACTION-COUNTER.
+       
+       CHECK-ACTION-VALIDITY.
+           PERFORM UNTIL CURRENT-ACTION-COUNTER > 16 OR ACTION-VALID
+               IF USER-INPUT = ACTION(CURRENT-ACTION-COUNTER)
+                   SET ACTION-VALID TO TRUE
+               ELSE
+                   ADD 2 TO CURRENT-ACTION-COUNTER
+               END-IF
+           END-PERFORM.
+
+           IF ACTION-VALID
+               SET CURRENT-DIALOGUE-INDEX TO
+                   ACTION(CURRENT-ACTION-COUNTER + 1)
+           ELSE
+               DISPLAY "Invalid Input!"
+               DISPLAY " ".
+           
+           SET ACTION-VALID TO FALSE.
+           MOVE 1 TO CURRENT-ACTION-COUNTER.
