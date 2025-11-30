@@ -57,12 +57,16 @@
        01 AVAILABLE-ACTIONS.
            02 ACTION               PIC X(500) OCCURS 16 TIMES.
        01 CURRENT-ACTION-COUNTER   PIC 9(2) VALUE 1.
-       01 CURRENT-ACTION-COLUMN    PIC 9(2) VALUE 1.
        01 ACTION-VALID-FLAG        PIC X(1) VALUE 'N'.
            88 ACTION-VALID                  VALUE 'Y'
                                    WHEN SET TO FALSE IS 'N'.
 
        01 CURRENT-DIALOGUE-INDEX   PIC 9(2) VALUE 1.
+
+      *These variables will hold VALUES determining the progress OF
+      *the player.
+       01 TASKS-COMPLETED.
+           02 WS-PUNCH-CARD        PIC X(1) VALUE 'N'.
 
        01 PLAYER-DATA.
            02 PLAYER-HEALTH        PIC ZZ9.
@@ -154,7 +158,8 @@
            DISPLAY "CREATING NEW GAME".
 
        EXPLORING-ROUTINE.
-           DISPLAY FUNCTION TRIM(DIALOGUE(CURRENT-DIALOGUE-INDEX)).
+           DISPLAY FUNCTION TRIM(DIALOGUE(CURRENT-DIALOGUE-INDEX)
+               TRAILING).
 
       *    We RESET all available actions and save the next available
       *    actions.    
@@ -170,12 +175,11 @@
                DISPLAY "Input: " WITH NO ADVANCING
 
                ACCEPT USER-INPUT
-
-               DISPLAY " "
+               
+               DISPLAY "+++++++++++++++++++++++++++++++++++++++++"
 
                PERFORM CHECK-ACTION-VALIDITY
            ELSE
-               DISPLAY " "
                SET CURRENT-DIALOGUE-INDEX TO ACTION(2).
        
        RESET-AVAILABLE-ACTIONS.
@@ -205,9 +209,17 @@
        
        DISPLAY-AVAILABLE-ACTIONS.
            PERFORM UNTIL CURRENT-ACTION-COUNTER > 16
-               IF ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL SPACES
-                   DISPLAY FUNCTION TRIM(ACTION(CURRENT-ACTION-COUNTER))
+               IF ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL SPACES AND
+                   ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL "HIDDEN"
+                   IF ACTION(CURRENT-ACTION-COUNTER) NOT EQUAL "INVALID"
+                       DISPLAY 
+                           FUNCTION TRIM(ACTION(CURRENT-ACTION-COUNTER))
+                   END-IF
                    ADD 2 TO CURRENT-ACTION-COUNTER
+               ELSE IF ACTION(CURRENT-ACTION-COUNTER) EQUAL "HIDDEN"
+                   DISPLAY "HIDDEN"
+                   DISPLAY " "
+                   EXIT PERFORM
                ELSE
                    DISPLAY " "
                    EXIT PERFORM
@@ -217,6 +229,8 @@
            MOVE 1 TO CURRENT-ACTION-COUNTER.
        
        CHECK-ACTION-VALIDITY.
+           MOVE 3 TO CURRENT-ACTION-COUNTER.
+
            PERFORM UNTIL CURRENT-ACTION-COUNTER > 16 OR ACTION-VALID
                IF USER-INPUT = ACTION(CURRENT-ACTION-COUNTER)
                    SET ACTION-VALID TO TRUE
@@ -226,11 +240,19 @@
            END-PERFORM.
 
            IF ACTION-VALID
+               PERFORM PROGRESS-CHECK
+
                SET CURRENT-DIALOGUE-INDEX TO
                    ACTION(CURRENT-ACTION-COUNTER + 1)
+               DISPLAY " "
            ELSE
                DISPLAY "Invalid Input!"
-               DISPLAY " ".
+               DISPLAY " "
+               MOVE ACTION(2) TO CURRENT-DIALOGUE-INDEX.
            
            SET ACTION-VALID TO FALSE.
            MOVE 1 TO CURRENT-ACTION-COUNTER.
+       
+       PROGRESS-CHECK.
+           IF CURRENT-DIALOGUE-INDEX = 35
+               SET WS-PUNCH-CARD TO 'Y'.

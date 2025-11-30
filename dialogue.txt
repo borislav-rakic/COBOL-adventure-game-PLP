@@ -1,18 +1,36 @@
 PROCEDURE:
 NONE;3;
 You are surrounded by a dizzying sequence of MOVE and COMPUTE statements. A large, dimly glowing sign points in two directions: WORKING-STORAGE and FILES.
-GO WORKING-STORAGE;5;GO FILES;9;GO EXIT;13;
+INVALID;1;GO WORKING-STORAGE;5;GO FILES;9;GO EXIT;13;
 WORKING-STORAGE:
 NONE;7;
 This space is immense, filled with perfectly organized shelves of data fields. Each shelf holds thousands of variables. In the center, an ancient, neglected console is blinking.
-GO PROCEDURE;1;GO FILES;9;EXAMINE CONSOLE;15;
+INVALID;5;GO PROCEDURE;1;GO FILES;9;EXAMINE CONSOLE;15;
 FILES:
 NONE;11;
 TESTING FILES
 NONE
 TESTING EXIT
 NONE
-TESTING CONSOLE1
+*This variable will be used to hold the
 NONE;17;
-TESTING CONSOLE2
-TESTING;18;
+*selected customer's 6-digit balance.
+NONE;19;
+ 01 WS-CUSTOMER-BALANCE  ___ ____.
+NONE;21;
+ 
+NONE;23;
+It seems you have to define the file type of the variable. What type of variable would be suitable here?
+INVALID;15;HIDDEN;0;PIC 9(6);25;PIC 999999;25;
+*This variable will be used to hold the
+NONE;27;
+*selected customer's 6-digit balance.
+NONE;29;
+ 01 WS-CUSTOMER-BALANCE  PIC 9(6).
+NONE;31;
+ 
+NONE;33;
+After defining the variable's file type, the console beeps once to hint at the validity of your solution.
+NONE;35;
+You see a piece of paper slowly coming out from below the console's screen. You take it and realize that it is a punch card.
+INVALID;25;GO PROCEDURE;1;GO FILES;9;EXAMINE CONSOLE;15;
